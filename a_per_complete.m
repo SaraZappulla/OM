@@ -1,0 +1,32 @@
+function [acc_perturbed] = a_per_complete(t,kep,acc_SRP)
+
+%NOTE: if the planet is not earth change them
+j2 = astroConstants(9);
+mu = astroConstants(13);
+R = astroConstants(23);
+
+i = kep(3);
+omega = kep(5);
+OM = kep(4);
+theta = kep(6);
+
+[r,V] = kepl_to_car(kep(1),kep(2),kep(3)/pi*180,kep(4)/pi*180,kep(5)/pi*180,kep(6)/pi*180,mu);
+
+vector = [1 - 3*sin(i)^2*sin(theta+omega)^2; ...
+            sin(i)^2*sin(2*(theta+omega));...
+            sin(2*i)*sin(theta+omega)];
+
+r = norm(r);
+constant_term = -3/2 * (j2.*mu.*R.^2) ./(r.^4);
+
+% rotation of SRP from carthesian to RSW frame
+% MR rotation matrix from carthesian to perifocal frame
+MR=[cos(omega) sin(omega) 0;-sin(omega) cos(omega) 0;0 0 1]*[1 0 0;0 cos(i) sin(i);...
+    0 -sin(i) cos(i)]*[cos(OM) sin(OM) 0;-sin(OM) cos(OM) 0;0 0 1];
+% R rotation matrix from perifocal to RSW frame
+R = [cos(theta) sin(theta) 0;-sin(theta) cos(theta) 0;0 0 1];
+acc_SRP_RSW =  R* MR * acc_SRP;
+%acc_SRP_RSW =  acc_SRP;
+
+acc_perturbed = constant_term .* vector + acc_SRP_RSW;
+end
